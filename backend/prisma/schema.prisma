@@ -1,0 +1,116 @@
+// Ini adalah schema database untuk Gampang Toko Cloud (Fokus: POS)
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ============================================
+// 1. CABANG & LOKASI
+// ============================================
+model Cabang {
+  id         Int      @id @default(autoincrement())
+  kodeCabang String   @unique @db.VarChar(10)
+  namaCabang String   @db.VarChar(100)
+  status     Int      @default(1)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  
+  lokasi    Lokasi[]
+  pengguna  Pengguna[]
+  penjualan Penjualan[]
+}
+
+model Lokasi {
+  id         Int      @id @default(autoincrement())
+  idCabang   Int
+  namaLokasi String   @db.VarChar(100)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  
+  cabang    Cabang    @relation(fields: [idCabang], references: [id])
+  penjualan Penjualan[]
+}
+
+// ============================================
+// 2. PENGGUNA (KASIR/ADMIN)
+// ============================================
+model Pengguna {
+  id          Int      @id @default(autoincrement())
+  idCabang    Int
+  usernm      String   @unique @db.VarChar(30)
+  namaLengkap String   @db.VarChar(100)
+  passwd      String   @db.VarChar(255) // Password akan di-hash
+  status      Int      @default(1)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  cabang    Cabang    @relation(fields: [idCabang], references: [id])
+  penjualan Penjualan[]
+}
+
+// ============================================
+// 3. BARANG / PRODUK
+// ============================================
+model Barang {
+  id         Int      @id @default(autoincrement())
+  kodeBarang String   @unique @db.VarChar(30)
+  namaBarang String   @db.VarChar(200)
+  barcode    String?  @db.VarChar(50)
+  hargaJual  Decimal  @default(0) @db.Decimal(18, 2)
+  hpp        Decimal  @default(0) @db.Decimal(18, 2)
+  stok       Float    @default(0)
+  status     Int      @default(1)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  
+  detailPenjualan DetailPenjualan[]
+  
+  @@index([barcode])
+  @@index([namaBarang])
+}
+
+// ============================================
+// 4. TRANSAKSI PENJUALAN (POS)
+// ============================================
+model Penjualan {
+  id          Int      @id @default(autoincrement())
+  idCabang    Int
+  idLokasi    Int
+  idKasir     Int
+  nomorRef    String   @db.VarChar(30)
+  tanggal     DateTime @default(now())
+  total       Decimal  @db.Decimal(18, 2)
+  bayar       Decimal  @db.Decimal(18, 2)
+  kembalian   Decimal  @db.Decimal(18, 2)
+  status      Int      @default(1) // 1 = Sukses, 0 = Batal
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  cabang  Cabang  @relation(fields: [idCabang], references: [id])
+  lokasi  Lokasi  @relation(fields: [idLokasi], references: [id])
+  kasir   Pengguna @relation(fields: [idKasir], references: [id])
+  detail  DetailPenjualan[]
+  
+  @@index([tanggal])
+  @@index([nomorRef])
+}
+
+model DetailPenjualan {
+  id          Int      @id @default(autoincrement())
+  idPenjualan Int
+  idBarang    Int
+  itemNo      Int
+  qty         Float
+  hargaJual   Decimal  @db.Decimal(18, 2)
+  total       Decimal  @db.Decimal(18, 2)
+  
+  penjualan Penjualan @relation(fields: [idPenjualan], references: [id], onDelete: Cascade)
+  barang    Barang    @relation(fields: [idBarang], references: [id])
+  
+  @@unique([idPenjualan, itemNo])
+}
