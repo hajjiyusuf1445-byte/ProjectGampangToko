@@ -4,7 +4,7 @@ import { ArrowLeft, Plus, Edit, Trash2, Save, X } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import './Admin.css'
 
-const API_URL = 'http://localhost:3000/api'
+const API_URL = 'https://projectgampangtoko-production.up.railway.app'
 
 function Admin() {
     const [searchTerm, setSearchTerm] = useState('')
