@@ -1,8 +1,8 @@
 require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
+const { authenticate, login } = require('./auth');
 const { PrismaClient } = require('@prisma/client');
-
 const app = express();
 const prisma = new PrismaClient(); // Inisialisasi koneksi ke database
 
@@ -69,7 +69,7 @@ app.get('/api/barang', async (req, res) => {
 });
 
 // 3. Endpoint: Menambah Barang Baru (POST)
-app.post('/api/barang', async (req, res) => {
+app.post('/api/barang',authenticate, async (req, res) => {
   try {
     const { kodeBarang, namaBarang, barcode, hargaJual, hpp, stok } = req.body;
     
@@ -94,7 +94,7 @@ app.post('/api/barang', async (req, res) => {
   }
 });
 // 5. Endpoint: Update Barang (PUT)
-app.put('/api/barang/:id', async (req, res) => {
+app.put('/api/barang/:id',authenticate, async (req, res) => {
   try {
     const { id } = req.params;
     const { kodeBarang, namaBarang, barcode, hargaJual, hpp, stok } = req.body;
@@ -122,7 +122,7 @@ app.put('/api/barang/:id', async (req, res) => {
 });
 
 // 6. Endpoint: Delete Barang (DELETE)
-app.delete('/api/barang/:id', async (req, res) => {
+app.delete('/api/barang/:id',authenticate, async (req, res) => {
   try {
     const { id } = req.params;
     
