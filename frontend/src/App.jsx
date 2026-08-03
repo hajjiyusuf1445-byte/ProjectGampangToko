@@ -7,7 +7,7 @@ import Struk from './Struk'
 import './Struk.css'
 import './App.css'
 
-const API_URL = 'http://localhost:3000/api'
+const API_URL = 'http://projectgampangtoko-production.up.railway.app'
 
 function App() {
   const [cart, setCart] = useState([])
