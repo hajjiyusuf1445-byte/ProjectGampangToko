@@ -3,9 +3,14 @@ import axios from 'axios'
 import { ArrowLeft, Plus, Edit, Trash2, Save, X } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import './Admin.css'
+import Login from './Login';
 
 const API_URL = 'https://projectgampangtoko-production.up.railway.app/api'
-
+// Set token default untuk semua request axios
+const token = localStorage.getItem('adminToken');
+if (token) {
+  axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+}
 function Admin() {
     const [searchTerm, setSearchTerm] = useState('')
     const [currentPage, setCurrentPage] = useState(1)
@@ -116,7 +121,12 @@ function Admin() {
       stok: ''
     })
   }
-
+  const [isLoggedIn, setIsLoggedIn] = useState(() => {
+  return !!localStorage.getItem('adminToken');
+   });
+  if (!isLoggedIn) {
+  return <Login onLoginSuccess={() => setIsLoggedIn(true)} />;
+   }
   return (
     <div className="admin-container">
       <header className="admin-header">
@@ -125,6 +135,18 @@ function Admin() {
           Kembali ke POS
         </Link>
         <h1> Manajemen Produk</h1>
+        <button 
+        onClick={() => {
+        localStorage.removeItem('adminToken');
+        setIsLoggedIn(false);
+         }}
+        style={{
+         padding: '8px 16px', background: '#dc3545', color: 'white',
+         border: 'none', borderRadius: '6px', cursor: 'pointer'
+         }}
+          >
+        Logout
+        </button>
       </header>
 
       <div className="admin-content">
