@@ -1,13 +1,9 @@
 const jwt = require('jsonwebtoken');
 
-// Ganti dengan password rahasia Anda (bebas, panjang lebih baik)
 const JWT_SECRET = 'gampang-toko-rahasia-2026-super-aman';
-
-// Username & Password Admin (nanti bisa diubah)
 const ADMIN_USERNAME = 'admin';
-const ADMIN_PASSWORD = 'gampangtoko123'; // Ganti dengan password Anda!
+const ADMIN_PASSWORD = 'gampangtoko123';
 
-// Middleware untuk proteksi route
 function authenticate(req, res, next) {
   const authHeader = req.headers['authorization'];
   const token = authHeader && authHeader.split(' ')[1];
@@ -25,7 +21,6 @@ function authenticate(req, res, next) {
   }
 }
 
-// Endpoint Login
 function login(req, res) {
   const { username, password } = req.body;
 
@@ -33,7 +28,7 @@ function login(req, res) {
     const token = jwt.sign(
       { username: ADMIN_USERNAME, role: 'admin' },
       JWT_SECRET,
-      { expiresIn: '24h' } // Token berlaku 24 jam
+      { expiresIn: '24h' }
     );
     return res.json({ success: true, token });
   } else {
