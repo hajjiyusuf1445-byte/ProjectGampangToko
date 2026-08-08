@@ -7,10 +7,13 @@ import Login from './Login';
 
 const API_URL = 'https://projectgampangtoko-production-4798.up.railway.app/api'
 // Set token default untuk semua request axios
-const token = localStorage.getItem('adminToken');
-if (token) {
-  axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
-}
+axios.interceptors.request.use((config) => {
+  const token = localStorage.getItem('adminToken');
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+  return config;
+});
 function Admin() {
     const [searchTerm, setSearchTerm] = useState('')
     const [currentPage, setCurrentPage] = useState(1)
