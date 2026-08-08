@@ -1,17 +1,13 @@
 import { useState, useEffect, useRef } from 'react'
-import axios from 'axios'
 import { ShoppingCart, Package, Search, Trash2, Plus } from 'lucide-react'
 import { BrowserRouter as Router, Routes, Route, Link } from 'react-router-dom'
 import Admin from './Admin'
 import Struk from './Struk'
 import './Struk.css'
 import './App.css'
-import api, { API_URL } from './api';
+import api from './api';
 import { ToastContainer, toast } from 'react-toastify';
-import 'react-toastify/dist/ReactToastify.css'; // Wajib import CSS-nya
-
-//const API_URL = 'https://projectgampangtoko-production-4798.up.railway.app/api'
-
+import 'react-toastify/dist/ReactToastify.css';
 
 function App() {
   const [cart, setCart] = useState([])
@@ -31,17 +27,17 @@ function App() {
     const fetchData = async () => {
       setIsLoading(true);
       try {
-        let url = `${API_URL}/barang?limit=50`;
-        
-        // Jika user mengetik minimal 2 huruf, cari ke server
+        const params = { limit: 50 };
         if (searchTerm.trim().length >= 2) {
-          url += `&search=${encodeURIComponent(searchTerm)}`;
+          params.search = searchTerm;
         }
-
-        const res = await axios.get(url);
         
-        if (!isCancelled && res.data.success) {
-          setProducts(res.data.data);
+        const res = await api.get('/barang', { params });
+        
+        if (!isCancelled) {
+          // Fallback format response (kalau backend return {data: []} atau langsung [])
+          const dataBarang = res.data.data || res.data;
+          setProducts(Array.isArray(dataBarang) ? dataBarang : []);
         }
       } catch (error) {
         console.error('Error fetching products:', error);
@@ -50,38 +46,27 @@ function App() {
       }
     };
 
-    // Tunggu 400ms setelah user berhenti mengetik (Debounce)
     const timer = setTimeout(fetchData, 400);
-
-    // Bersihkan timer jika user masih mengetik
     return () => {
       isCancelled = true;
       clearTimeout(timer);
     };
   }, [searchTerm]);
 
-    const addToCart = (product) => {
-    const harga = parseFloat(product.hargaJual) || 0; // Paksa jadi angka
+  const addToCart = (product) => {
+    const harga = parseFloat(product.hargaJual) || 0;
     const existingItem = cart.find(item => item.id === product.id)
     
     if (existingItem) {
       setCart(cart.map(item => {
         if (item.id === product.id) {
           const newQty = item.qty + 1;
-          return { 
-            ...item, 
-            qty: newQty, 
-            total: newQty * harga // Perkalian angka
-          };
+          return { ...item, qty: newQty, total: newQty * harga };
         }
         return item;
       }));
     } else {
-      setCart([...cart, { 
-        ...product, 
-        qty: 1, 
-        total: harga 
-      }]);
+      setCart([...cart, { ...product, qty: 1, total: harga }]);
     }
   }
 
@@ -89,64 +74,65 @@ function App() {
     setCart(cart.filter(item => item.id !== productId))
   }
 
-    const updateQty = (productId, newQty) => {
+  const updateQty = (productId, newQty) => {
     if (newQty < 1) return;
-    
     const item = cart.find(p => p.id === productId);
     if (!item) return;
-    
-    const harga = parseFloat(item.hargaJual) || 0; // Paksa jadi angka
+    const harga = parseFloat(item.hargaJual) || 0;
     
     setCart(cart.map(p =>
-      p.id === productId
-        ? { ...p, qty: newQty, total: newQty * harga }
-        : p
+      p.id === productId ? { ...p, qty: newQty, total: newQty * harga } : p
     ));
   }
 
-    const cartTotal = cart.reduce((sum, item) => sum + (parseFloat(item.total) || 0), 0);
+  const cartTotal = cart.reduce((sum, item) => sum + (parseFloat(item.total) || 0), 0);
 
-  const handleBarcodeSubmit = (e) => {
-    e.preventDefault()
-    if (!barcode.trim()) return;
+  // 🎯 FUNGSI SUBMIT BARCODE (Sudah dibungkus dengan benar)
+  const handleBarcodeSubmit = async (e) => {
+    e.preventDefault(); // Cegah reload halaman
     
-    // Cari barcode langsung dari server jika tidak ada di layar
-    const product = products.find(p => p.barcode === barcode)
- if (product) {
-  // Barang ketemu di layar → langsung masuk keranjang (tidak berubah)
-  addToCart(product);
-  setBarcode('');
-} else {
-  setIsSearching(true);   // 💡 Nyalakan saklar → ikon ⏳ muncul di input
+    const code = barcode.trim();
+    if (!code) return;
 
-  api.get('/barang', {
-    params: { search: barcode, limit: 1 }
-  })
-  .then(res => {
-    if (res.data && res.data.length > 0) {
-      addToCart(res.data[0]);
+    // Cari di daftar products yang sedang tampil di layar
+    const product = products.find((p) => 
+      p.barcode === code || p.namaBarang?.toLowerCase() === code.toLowerCase()
+    );
+
+    if (product) {
+      addToCart(product);
       setBarcode('');
-      toast.success('Barang ditemukan & masuk keranjang!');  // ✅ notifikasi hijau
+      toast.success(`${product.namaBarang} masuk keranjang!`);
     } else {
-      toast.error('Barcode tidak ditemukan di database!');   // ❌ notifikasi merah
-      setBarcode('');
-    }
-  })
-  .catch(error => {
-    console.error(error);
-    toast.error('Gagal menghubungi server!');                // ❌ kalau server down
-    setBarcode('');
-  })
-  .finally(() => {
-    setIsSearching(false);  // 🔌 Matikan saklar → ⏳ hilang (PASTI jalan, sukses maupun gagal)
-  });
+      setIsSearching(true);
+      try {
+        const res = await api.get('/barang', {
+          params: { search: code, limit: 1 }
+        });
+        
+        const foundProduct = res.data.data?.[0] || res.data?.[0];
 
-}
+        if (foundProduct) {
+          addToCart(foundProduct);
+          setBarcode('');
+          toast.success(`${foundProduct.namaBarang} masuk keranjang!`);
+        } else {
+          toast.error('Barcode tidak ditemukan di database!');
+          setBarcode('');
+        }
+      } catch (error) {
+        console.error(error);
+        toast.error('Gagal menghubungi server!');
+        setBarcode('');
+      } finally {
+        setIsSearching(false);
+      }
+    }
   }
 
   const handleCheckout = async () => {
     if (cart.length === 0) {
-      alert('Keranjang kosong!')
+      toast.warning('Keranjang kosong!')
       return
     }
 
@@ -155,7 +141,7 @@ function App() {
 
     const paymentAmount = parseFloat(payment)
     if (paymentAmount < cartTotal) {
-      alert('Uang tidak cukup!')
+      toast.error('Uang tidak cukup!')
       return
     }
 
@@ -164,34 +150,28 @@ function App() {
 
     try {
       const transaksiData = {
-        idCabang: 1,
-        idLokasi: 1,
-        idKasir: 1,
-        nomorRef: nomorRef,
-        total: cartTotal,
-        bayar: paymentAmount,
-        kembalian: change,
-        status: 1,
-        items: cart
+        idCabang: 1, idLokasi: 1, idKasir: 1,
+        nomorRef: nomorRef, total: cartTotal,
+        bayar: paymentAmount, kembalian: change,
+        status: 1, items: cart
       }
 
-      const response = await axios.post(`${API_URL}/penjualan`, transaksiData)
+      const response = await api.post('/penjualan', transaksiData)
+      const isSuccess = response.data.success || response.data.id; 
       
-      if (response.data.success) {
+      if (isSuccess) {
         setLastTransaksi({
-          nomorRef: nomorRef,
-          total: cartTotal,
-          bayar: paymentAmount,
-          kembalian: change,
-          items: cart
+          nomorRef: nomorRef, total: cartTotal,
+          bayar: paymentAmount, kembalian: change, items: cart
         })
         setShowStruk(true)
         setCart([])
+        toast.success('Transaksi berhasil!')
       } else {
-        alert('❌ Gagal: ' + response.data.message)
+        toast.error('❌ Gagal: ' + (response.data.message || 'Unknown error'))
       }
     } catch (error) {
-      alert(' Gagal menyimpan transaksi.')
+      toast.error('Gagal menyimpan transaksi.')
       console.error(error)
     }
   }
@@ -216,46 +196,35 @@ function App() {
           </div>
 
           <form onSubmit={handleBarcodeSubmit} className="barcode-form">
-            <div style={{ position: 'relative', marginBottom: '1rem' }}>
-  <input 
-    type="text"
-    value={barcode}
-    onChange={(e) => setBarcode(e.target.value)}
-    placeholder="Scan barcode atau ketik nama barang..."
-    disabled={isSearching} // Input dikunci sebentar saat loading
-    style={{ 
-      width: '100%', 
-      padding: '10px', 
-      paddingRight: isSearching ? '40px' : '10px', // Kasih ruang untuk spinner
-      fontSize: '16px' 
-    }}
-  />
-  
-  {/* Spinner muncul kalau isSearching true */}
-  {isSearching && (
-    <span style={{ 
-      position: 'absolute', 
-      right: '15px', 
-      top: '50%', 
-      transform: 'translateY(-50%)',
-      fontSize: '20px'
-    }}>
-      ⏳
-    </span>
-  )}
-</div>
+            <div style={{ position: 'relative', marginBottom: '1rem', flex: 1 }}>
+              <input 
+                type="text"
+                value={barcode}
+                onChange={(e) => setBarcode(e.target.value)}
+                placeholder="Scan barcode atau ketik nama barang..."
+                disabled={isSearching}
+                style={{ 
+                  width: '100%', padding: '10px', 
+                  paddingRight: isSearching ? '40px' : '10px', fontSize: '16px' 
+                }}
+              />
+              {isSearching && (
+                <span style={{ 
+                  position: 'absolute', right: '15px', top: '50%', 
+                  transform: 'translateY(-50%)', fontSize: '20px'
+                }}>
+                  ⏳
+                </span>
+              )}
+            </div>
             <button type="submit"><Plus size={20} /></button>
           </form>
 
           <div className="products-grid">
             {isLoading ? (
-              <p style={{ padding: '20px', color: '#888', textAlign: 'center', width: '100%' }}>
-                🔍 Mencari di database...
-              </p>
+              <p style={{ padding: '20px', color: '#888', textAlign: 'center', width: '100%' }}>🔍 Mencari di database...</p>
             ) : products.length === 0 ? (
-              <p style={{ padding: '20px', color: '#888', textAlign: 'center', width: '100%' }}>
-                Produk tidak ditemukan. Coba kata kunci lain.
-              </p>
+              <p style={{ padding: '20px', color: '#888', textAlign: 'center', width: '100%' }}>Produk tidak ditemukan.</p>
             ) : (
               products.map(product => (
                 <div key={product.id} className="product-card" onClick={() => addToCart(product)}>
@@ -271,7 +240,6 @@ function App() {
 
         <div className="cart-section">
           <h2><ShoppingCart size={24} /> Keranjang</h2>
-          
           <div className="cart-items">
             {cart.map(item => (
               <div key={item.id} className="cart-item">
@@ -287,9 +255,7 @@ function App() {
                     <Trash2 size={16} />
                   </button>
                 </div>
-                <div className="item-total">
-                  Rp {item.total.toLocaleString()}
-                </div>
+                <div className="item-total">Rp {item.total.toLocaleString()}</div>
               </div>
             ))}
           </div>
@@ -299,46 +265,28 @@ function App() {
               <span>Total:</span>
               <span className="total-amount">Rp {cartTotal.toLocaleString()}</span>
             </div>
-            <button className="checkout-btn" onClick={handleCheckout}>
-              💳 Bayar
-            </button>
+            <button className="checkout-btn" onClick={handleCheckout}>💳 Bayar</button>
           </div>
         </div>
       </div>
 
-      {/* Modal Struk */}
       {showStruk && lastTransaksi && (
         <div className="modal-struk">
           <div className="modal-struk-content">
             <Struk ref={strukRef} transaksi={lastTransaksi} />
-            
             <div className="modal-struk-actions">
-              <button className="btn-print" onClick={() => window.print()}>
-                🖨️ Cetak Struk
-              </button>
-              <button className="btn-close" onClick={() => setShowStruk(false)}>
-                Tutup
-              </button>
+              <button className="btn-print" onClick={() => window.print()}>🖨️ Cetak Struk</button>
+              <button className="btn-close" onClick={() => setShowStruk(false)}>Tutup</button>
             </div>
           </div>
         </div>
       )}
-        return (
-    <div className="app-container">
-      {/* ... semua kode UI POS Anda ... */}
-      
-      {/* Taruh ini di paling bawah agar notifikasi muncul mengambang di pojok kanan atas */}
+
+      {/* Toast Notifikasi */}
       <ToastContainer 
-        position="top-right" 
-        autoClose={3000} 
-        hideProgressBar={false}
-        newestOnTop
-        closeOnClick
-        pauseOnHover
-        theme="light"
+        position="top-right" autoClose={3000} hideProgressBar={false}
+        newestOnTop closeOnClick pauseOnHover theme="light"
       />
-    </div>
-  );
     </div>
   )
 }

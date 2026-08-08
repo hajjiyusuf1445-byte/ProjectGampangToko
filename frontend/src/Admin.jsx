@@ -4,7 +4,7 @@ import { ArrowLeft, Plus, Edit, Trash2, Save, X } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import './Admin.css'
 import Login from './Login';
-import api from './api';
+import api, { API_URL } from './api';
 
 //const API_URL = 'https://projectgampangtoko-production-4798.up.railway.app/api'
 // Set token default untuk semua request axios
