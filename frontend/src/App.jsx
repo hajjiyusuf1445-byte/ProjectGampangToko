@@ -6,7 +6,7 @@ import Admin from './Admin'
 import Struk from './Struk'
 import './Struk.css'
 import './App.css'
-import api from './api';
+import api, { API_URL } from './api';
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css'; // Wajib import CSS-nya
 
