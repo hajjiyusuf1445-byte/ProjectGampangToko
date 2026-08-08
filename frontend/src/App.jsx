@@ -7,6 +7,8 @@ import Struk from './Struk'
 import './Struk.css'
 import './App.css'
 import api from './api';
+import { ToastContainer, toast } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css'; // Wajib import CSS-nya
 
 //const API_URL = 'https://projectgampangtoko-production-4798.up.railway.app/api'
 
@@ -20,6 +22,7 @@ function App() {
   const [lastTransaksi, setLastTransaksi] = useState(null)
   const [isLoading, setIsLoading] = useState(true)
   const strukRef = useRef()
+  const [isSearching, setIsSearching] = useState(false);
 
   // Logika Pencarian Cerdas (Server-Side)
   useEffect(() => {
@@ -109,30 +112,35 @@ function App() {
     
     // Cari barcode langsung dari server jika tidak ada di layar
     const product = products.find(p => p.barcode === barcode)
-    if (product) {
+ if (product) {
+  // Barang ketemu di layar → langsung masuk keranjang (tidak berubah)
   addToCart(product);
   setBarcode('');
 } else {
-  // Jika tidak ketemu di 50 barang yang tampil, cari spesifik ke server
+  setIsSearching(true);   // 💡 Nyalakan saklar → ikon ⏳ muncul di input
+
   api.get('/barang', {
-    params: {
-      search: barcode,
-      limit: 1
-    }
-  }).then(res => {
-    // Jika server menemukan barangnya (array tidak kosong)
+    params: { search: barcode, limit: 1 }
+  })
+  .then(res => {
     if (res.data && res.data.length > 0) {
-      addToCart(res.data[0]); // Masukkan barang pertama ke keranjang
-      setBarcode('');          // Kosongkan input barcode
+      addToCart(res.data[0]);
+      setBarcode('');
+      toast.success('Barang ditemukan & masuk keranjang!');  // ✅ notifikasi hijau
     } else {
-      // Jika server juga tidak menemukannya
-      alert('Barcode tidak ditemukan di database!');
+      toast.error('Barcode tidak ditemukan di database!');   // ❌ notifikasi merah
       setBarcode('');
     }
-  }).catch(error => {
-    console.error('Error fetching barang:', error);
-    alert('Gagal menghubungi server untuk mencari barang.');
+  })
+  .catch(error => {
+    console.error(error);
+    toast.error('Gagal menghubungi server!');                // ❌ kalau server down
+    setBarcode('');
+  })
+  .finally(() => {
+    setIsSearching(false);  // 🔌 Matikan saklar → ⏳ hilang (PASTI jalan, sukses maupun gagal)
   });
+
 }
   }
 
@@ -208,13 +216,34 @@ function App() {
           </div>
 
           <form onSubmit={handleBarcodeSubmit} className="barcode-form">
-            <input
-              type="text"
-              placeholder="Scan barcode..."
-              value={barcode}
-              onChange={(e) => setBarcode(e.target.value)}
-              autoFocus
-            />
+            <div style={{ position: 'relative', marginBottom: '1rem' }}>
+  <input 
+    type="text"
+    value={barcode}
+    onChange={(e) => setBarcode(e.target.value)}
+    placeholder="Scan barcode atau ketik nama barang..."
+    disabled={isSearching} // Input dikunci sebentar saat loading
+    style={{ 
+      width: '100%', 
+      padding: '10px', 
+      paddingRight: isSearching ? '40px' : '10px', // Kasih ruang untuk spinner
+      fontSize: '16px' 
+    }}
+  />
+  
+  {/* Spinner muncul kalau isSearching true */}
+  {isSearching && (
+    <span style={{ 
+      position: 'absolute', 
+      right: '15px', 
+      top: '50%', 
+      transform: 'translateY(-50%)',
+      fontSize: '20px'
+    }}>
+      ⏳
+    </span>
+  )}
+</div>
             <button type="submit"><Plus size={20} /></button>
           </form>
 
@@ -294,6 +323,22 @@ function App() {
           </div>
         </div>
       )}
+        return (
+    <div className="app-container">
+      {/* ... semua kode UI POS Anda ... */}
+      
+      {/* Taruh ini di paling bawah agar notifikasi muncul mengambang di pojok kanan atas */}
+      <ToastContainer 
+        position="top-right" 
+        autoClose={3000} 
+        hideProgressBar={false}
+        newestOnTop
+        closeOnClick
+        pauseOnHover
+        theme="light"
+      />
+    </div>
+  );
     </div>
   )
 }
