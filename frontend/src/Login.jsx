@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import axios from 'axios';
+import api from './api';
 
-const API_URL = 'https://projectgampangtoko-production-4798.up.railway.app/api';
+//const API_URL = 'https://projectgampangtoko-production-4798.up.railway.app/api';
 
 function Login({ onLoginSuccess }) {
   const [username, setUsername] = useState('');
@@ -15,7 +16,8 @@ function Login({ onLoginSuccess }) {
     setLoading(true);
 
     try {
-      const res = await axios.post(`${API_URL}/login`, { username, password });
+      //const res = await axios.post(`${API_URL}/login`, { username, password });
+      const res = await api.post('/login', { username, password });
       if (res.data.success) {
         localStorage.setItem('adminToken', res.data.token);
         onLoginSuccess();

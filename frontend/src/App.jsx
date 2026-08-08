@@ -6,8 +6,10 @@ import Admin from './Admin'
 import Struk from './Struk'
 import './Struk.css'
 import './App.css'
+import api from './api';
 
-const API_URL = 'https://projectgampangtoko-production-4798.up.railway.app/api'
+//const API_URL = 'https://projectgampangtoko-production-4798.up.railway.app/api'
+
 
 function App() {
   const [cart, setCart] = useState([])
@@ -108,20 +110,30 @@ function App() {
     // Cari barcode langsung dari server jika tidak ada di layar
     const product = products.find(p => p.barcode === barcode)
     if (product) {
-      addToCart(product)
-      setBarcode('')
-    } else {
-      // Jika tidak ketemu di 50 barang yang tampil, cari ke server
-      axios.get(`${API_URL}/barang?search=${barcode}&limit=1`)
-        .then(res => {
-          if (res.data.success && res.data.data.length > 0) {
-            addToCart(res.data.data[0])
-            setBarcode('')
-          } else {
-            alert('Produk dengan barcode tersebut tidak ditemukan!')
-          }
-        })
+  addToCart(product);
+  setBarcode('');
+} else {
+  // Jika tidak ketemu di 50 barang yang tampil, cari spesifik ke server
+  api.get('/barang', {
+    params: {
+      search: barcode,
+      limit: 1
     }
+  }).then(res => {
+    // Jika server menemukan barangnya (array tidak kosong)
+    if (res.data && res.data.length > 0) {
+      addToCart(res.data[0]); // Masukkan barang pertama ke keranjang
+      setBarcode('');          // Kosongkan input barcode
+    } else {
+      // Jika server juga tidak menemukannya
+      alert('Barcode tidak ditemukan di database!');
+      setBarcode('');
+    }
+  }).catch(error => {
+    console.error('Error fetching barang:', error);
+    alert('Gagal menghubungi server untuk mencari barang.');
+  });
+}
   }
 
   const handleCheckout = async () => {

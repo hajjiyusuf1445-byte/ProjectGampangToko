@@ -4,8 +4,9 @@ import { ArrowLeft, Plus, Edit, Trash2, Save, X } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import './Admin.css'
 import Login from './Login';
+import api from './api';
 
-const API_URL = 'https://projectgampangtoko-production-4798.up.railway.app/api'
+//const API_URL = 'https://projectgampangtoko-production-4798.up.railway.app/api'
 // Set token default untuk semua request axios
 axios.interceptors.request.use((config) => {
   const token = localStorage.getItem('adminToken');
@@ -61,7 +62,9 @@ function Admin() {
     try {
       if (editingProduct) {
         // Update produk
-        await axios.put(`${API_URL}/barang/${editingProduct.id}`, formData)
+        //await axios.put(`${API_URL}/barang/${editingProduct.id}`, formData)
+        await api.put(`/barang/${id}`, data);
+
         alert('✅ Produk berhasil diupdate!')
       } else {
         // Tambah produk baru
@@ -103,7 +106,8 @@ function Admin() {
     if (!confirm('Apakah Anda yakin ingin menghapus produk ini?')) return
     
     try {
-      await axios.delete(`${API_URL}/barang/${id}`)
+      //await axios.delete(`${API_URL}/barang/${id}`)
+      await api.delete(`/barang/${id}`);
       alert('✅ Produk berhasil dihapus!')
       loadProducts()
     } catch (error) {
