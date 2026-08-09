@@ -144,6 +144,59 @@ function App() {
       toast.error('Uang tidak cukup!')
       return
     }
+    const printStruk = () => {
+    const strukEl = strukRef.current;
+    if (!strukEl) {
+    toast.error('Struk belum siap!');
+    return;
+  }
+
+  // Buat iframe tersembunyi
+  const iframe = document.createElement('iframe');
+  iframe.style.cssText = 'position:fixed;width:0;height:0;border:0;visibility:hidden;';
+  document.body.appendChild(iframe);
+
+  const doc = iframe.contentWindow.document;
+  doc.open();
+  doc.write(`<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Struk</title>
+<style>
+  * { box-sizing: border-box; }
+  body { margin:0; padding:3mm; font-family:'Courier New',Courier,monospace; font-size:12px; color:#000; }
+  .struk { width:100%; box-shadow:none; padding:0; margin:0; min-height:0; }
+  .struk-header { text-align:center; }
+  .struk-header h2 { margin:0; font-size:16px; letter-spacing:1px; }
+  .struk-header p { margin:2px 0; font-size:11px; }
+  .struk-line { border-top:1px solid #000; margin:6px 0; }
+  .struk-line.dashed { border-top-style:dashed; }
+  .struk-meta div, .struk-totals .row, .struk-item .item-detail { display:flex; justify-content:space-between; gap:8px; }
+  .struk-item { margin-bottom:4px; }
+  .item-nama { font-weight:bold; }
+  .item-detail { font-size:11px; }
+  .struk-totals .row.grand { font-weight:bold; font-size:13px; }
+  .struk-qr { display:flex; justify-content:center; margin-top:8px; }
+  .struk-qr img { width:72px; height:72px; }
+  .struk-footer { text-align:center; font-size:11px; margin-top:8px; }
+  .struk-footer p { margin:2px 0; }
+  @page { margin: 0; }
+</style>
+</head>
+<body>
+${strukEl.outerHTML}
+</body>
+</html>`);
+  doc.close();
+
+  // Print hanya isi iframe (struk saja)
+  iframe.contentWindow.focus();
+  setTimeout(() => {
+    iframe.contentWindow.print();
+    setTimeout(() => document.body.removeChild(iframe), 500);
+  }, 250);
+};
 
     const change = paymentAmount - cartTotal
     const nomorRef = `TRX-${Date.now()}`
@@ -275,7 +328,7 @@ function App() {
           <div className="modal-struk-content">
             <Struk ref={strukRef} transaksi={lastTransaksi} />
             <div className="modal-struk-actions">
-              <button className="btn-print" onClick={() => window.print()}>🖨️ Cetak Struk</button>
+              <button className="btn-print" onClick={printStruk}>🖨️ Cetak Struk</button>
               <button className="btn-close" onClick={() => setShowStruk(false)}>Tutup</button>
             </div>
           </div>
