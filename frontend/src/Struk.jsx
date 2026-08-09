@@ -1,6 +1,6 @@
-import { forwardRef } from 'react';
+import { forwardRef, useState, useEffect } from 'react';
+import QRCode from 'qrcode';
 import './Struk.css';
-import { QRCodeSVG } from 'qrcode.react';
 
 // ============================================
 // 🏪 EDIT IDENTITAS TOKO DI SINI, BOS!
@@ -14,6 +14,17 @@ const TOKO = {
 const rp = (n) => 'Rp ' + (Number(n) || 0).toLocaleString('id-ID');
 
 const Struk = forwardRef(({ transaksi }, ref) => {
+  const [qrDataUrl, setQrDataUrl] = useState('');
+
+  // Generate QR setiap kali ada transaksi baru
+  useEffect(() => {
+    if (!transaksi) return;
+    const isiQR = `${TOKO.nama}\n${transaksi.nomorRef}\nTotal: ${rp(transaksi.total)}`;
+    QRCode.toDataURL(isiQR, { width: 200, margin: 1 })
+      .then((url) => setQrDataUrl(url))
+      .catch(() => setQrDataUrl(''));
+  }, [transaksi]);
+
   if (!transaksi) return null;
 
   const now = new Date();
@@ -22,7 +33,6 @@ const Struk = forwardRef(({ transaksi }, ref) => {
 
   return (
     <div className="struk" ref={ref}>
-      {/* Header Toko */}
       <div className="struk-header">
         <h2>{TOKO.nama}</h2>
         <p>{TOKO.alamat}</p>
@@ -31,7 +41,6 @@ const Struk = forwardRef(({ transaksi }, ref) => {
 
       <div className="struk-line" />
 
-      {/* Info Transaksi */}
       <div className="struk-meta">
         <div><span>No. Ref</span><span>{transaksi.nomorRef}</span></div>
         <div><span>Tanggal</span><span>{tanggal} {jam}</span></div>
@@ -40,7 +49,6 @@ const Struk = forwardRef(({ transaksi }, ref) => {
 
       <div className="struk-line dashed" />
 
-      {/* Daftar Barang */}
       <div className="struk-items">
         {transaksi.items.map((item) => (
           <div className="struk-item" key={item.id}>
@@ -55,7 +63,6 @@ const Struk = forwardRef(({ transaksi }, ref) => {
 
       <div className="struk-line dashed" />
 
-      {/* Total */}
       <div className="struk-totals">
         <div className="row grand">
           <span>TOTAL</span><span>{rp(transaksi.total)}</span>
@@ -66,11 +73,13 @@ const Struk = forwardRef(({ transaksi }, ref) => {
 
       <div className="struk-line" />
 
-      <div style={{ display: 'flex', justifyContent: 'center', marginTop: 8 }}>
-      <QRCodeSVG value={`${TOKO.nama} | ${transaksi.nomorRef} | Total: ${rp(transaksi.total)}`} size={72} />
-      </div>
+      {/* QR Code (gambar biasa, aman dari bentrok React) */}
+      {qrDataUrl && (
+        <div className="struk-qr">
+          <img src={qrDataUrl} alt="QR Transaksi" />
+        </div>
+      )}
 
-      {/* Footer */}
       <div className="struk-footer">
         <p>Terima kasih telah berbelanja!</p>
         <p>Barang yang sudah dibeli tidak dapat dikembalikan</p>

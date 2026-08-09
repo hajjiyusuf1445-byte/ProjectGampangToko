@@ -54,3 +54,12 @@
 
   @page { margin: 0; }
 }
+.struk-qr {
+  display: flex;
+  justify-content: center;
+  margin-top: 8px;
+}
+.struk-qr img {
+  width: 72px;
+  height: 72px;
+}
