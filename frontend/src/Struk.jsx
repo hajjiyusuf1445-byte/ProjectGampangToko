@@ -1,5 +1,6 @@
 import { forwardRef } from 'react';
 import './Struk.css';
+import { QRCodeSVG } from 'qrcode.react';
 
 // ============================================
 // 🏪 EDIT IDENTITAS TOKO DI SINI, BOS!
@@ -64,6 +65,10 @@ const Struk = forwardRef(({ transaksi }, ref) => {
       </div>
 
       <div className="struk-line" />
+
+      <div style={{ display: 'flex', justifyContent: 'center', marginTop: 8 }}>
+      <QRCodeSVG value={`${TOKO.nama} | ${transaksi.nomorRef} | Total: ${rp(transaksi.total)}`} size={72} />
+      </div>
 
       {/* Footer */}
       <div className="struk-footer">
