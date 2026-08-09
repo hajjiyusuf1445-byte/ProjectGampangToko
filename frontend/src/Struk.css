@@ -1,99 +1,56 @@
-/* Tampilan Preview di Layar */
-.struk-container {
-  width: 300px; /* Lebar standar struk thermal */
-  margin: 20px auto;
-  padding: 15px;
-  background: white;
-  font-family: 'Courier New', Courier, monospace; /* Font struk */
+/* ===== Tampilan Struk di Layar (Modal) ===== */
+.struk {
+  width: 80mm;                 /* Lebar kertas thermal standar */
+  min-height: 100mm;
+  margin: 0 auto;
+  padding: 4mm;
+  background: #fff;
+  color: #000;
+  font-family: 'Courier New', Courier, monospace;
   font-size: 12px;
-  color: black;
-  box-shadow: 0 0 10px rgba(0,0,0,0.1);
+  line-height: 1.4;
+  box-shadow: 0 4px 12px rgba(0,0,0,.25);
 }
 
-.struk-header {
-  text-align: center;
-}
+.struk-header { text-align: center; }
+.struk-header h2 { margin: 0; font-size: 16px; letter-spacing: 1px; }
+.struk-header p { margin: 2px 0; font-size: 11px; }
 
-.struk-header h2 {
-  margin: 0 0 5px 0;
-  font-size: 16px;
-  font-weight: bold;
-}
+.struk-line { border-top: 1px solid #000; margin: 6px 0; }
+.struk-line.dashed { border-top-style: dashed; }
 
-.struk-header p {
-  margin: 2px 0;
-  font-size: 11px;
-}
-
-.struk-info p {
-  margin: 2px 0;
-}
-
-.divider {
-  margin: 5px 0;
-  text-align: center;
-  overflow: hidden;
-  white-space: nowrap;
-}
-
-.struk-item {
-  margin-bottom: 5px;
-}
-
-.item-name {
-  font-weight: bold;
-  margin-bottom: 2px;
-}
-
-.item-detail {
+.struk-meta div,
+.struk-totals .row,
+.struk-item .item-detail {
   display: flex;
   justify-content: space-between;
-  font-size: 11px;
+  gap: 8px;
 }
 
-.total-row {
-  display: flex;
-  justify-content: space-between;
-  margin: 3px 0;
-  font-weight: bold;
-}
+.struk-item { margin-bottom: 4px; }
+.item-nama { font-weight: bold; }
+.item-detail { font-size: 11px; }
 
-.struk-footer {
-  text-align: center;
-  margin-top: 10px;
-}
+.struk-totals .row.grand { font-weight: bold; font-size: 13px; }
 
-.struk-footer p {
-  margin: 2px 0;
-}
+.struk-footer { text-align: center; font-size: 11px; margin-top: 8px; }
+.struk-footer p { margin: 2px 0; }
 
-/* =========================================
-   INI BAGIAN AJAIB: TAMPILAN SAAT DI-PRINT
-   ========================================= */
+/* ===== ATURAN KHUSUS SAAT PRINT ===== */
 @media print {
-  /* Sembunyikan SEMUA yang ada di body */
-  body * {
-    visibility: hidden;
-  }
-  
-  /* Hanya tampilkan struk */
-  .struk-container, .struk-container * {
-    visibility: visible;
-  }
+  /* Sembunyikan SELURUH halaman, kecuali struk */
+  body * { visibility: hidden; }
+  .struk, .struk * { visibility: visible; }
 
-  .struk-container {
-    position: absolute;
-    left: 0;
+  .struk {
+    position: fixed;
     top: 0;
-    width: 100%; /* Paksa lebar penuh kertas */
+    left: 0;
+    width: 80mm;    /* Ganti ke 58mm kalau printer thermal kecil */
     margin: 0;
     padding: 0;
     box-shadow: none;
   }
 
-  /* Hilangkan header/footer bawaan browser saat print */
-  @page {
-    margin: 0;
-    size: 80mm auto; /* Ukuran kertas struk thermal 80mm */
-  }
+  @page { margin: 0; }
 }

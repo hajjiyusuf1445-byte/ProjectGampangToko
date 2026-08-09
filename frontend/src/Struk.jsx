@@ -1,70 +1,78 @@
-import { forwardRef } from 'react'
+import { forwardRef } from 'react';
+import './Struk.css';
 
-// forwardRef dibutuhkan agar kita bisa print komponen ini dari luar
+// ============================================
+// 🏪 EDIT IDENTITAS TOKO DI SINI, BOS!
+// ============================================
+const TOKO = {
+  nama: 'GAMPANG TOKO',
+  alamat: 'Jl. Raya Contoh No. 123, Kota Anda',
+  telp: '0812-3456-7890',
+};
+
+const rp = (n) => 'Rp ' + (Number(n) || 0).toLocaleString('id-ID');
+
 const Struk = forwardRef(({ transaksi }, ref) => {
-  const formatRupiah = (angka) => {
-    return new Intl.NumberFormat('id-ID').format(angka)
-  }
+  if (!transaksi) return null;
 
-  const tanggal = new Date().toLocaleString('id-ID', {
-    dateStyle: 'medium',
-    timeStyle: 'short'
-  })
+  const now = new Date();
+  const tanggal = now.toLocaleDateString('id-ID', { day: '2-digit', month: '2-digit', year: 'numeric' });
+  const jam = now.toLocaleTimeString('id-ID');
 
   return (
-    <div ref={ref} className="struk-container">
+    <div className="struk" ref={ref}>
+      {/* Header Toko */}
       <div className="struk-header">
-        <h2>GAMPANG TOKO</h2>
-        <p>Jl. Contoh Alamat No. 123</p>
-        <p>Telp: 0812-3456-7890</p>
-        <div className="divider">================================</div>
+        <h2>{TOKO.nama}</h2>
+        <p>{TOKO.alamat}</p>
+        <p>Telp: {TOKO.telp}</p>
       </div>
 
-      <div className="struk-info">
-        <p>No: {transaksi.nomorRef}</p>
-        <p>Tgl: {tanggal}</p>
-        <p>Kasir: Admin</p>
+      <div className="struk-line" />
+
+      {/* Info Transaksi */}
+      <div className="struk-meta">
+        <div><span>No. Ref</span><span>{transaksi.nomorRef}</span></div>
+        <div><span>Tanggal</span><span>{tanggal} {jam}</span></div>
+        <div><span>Kasir</span><span>Admin</span></div>
       </div>
 
-      <div className="divider">--------------------------------</div>
+      <div className="struk-line dashed" />
 
+      {/* Daftar Barang */}
       <div className="struk-items">
-        {transaksi.items.map((item, index) => (
-          <div key={index} className="struk-item">
-            <div className="item-name">{item.namaBarang}</div>
+        {transaksi.items.map((item) => (
+          <div className="struk-item" key={item.id}>
+            <div className="item-nama">{item.namaBarang}</div>
             <div className="item-detail">
-              <span>{item.qty} x {formatRupiah(item.hargaJual)}</span>
-              <span>{formatRupiah(item.total)}</span>
+              <span>{item.qty} x {rp(item.hargaJual)}</span>
+              <span>{rp(item.total)}</span>
             </div>
           </div>
         ))}
       </div>
 
-      <div className="divider">--------------------------------</div>
+      <div className="struk-line dashed" />
 
-      <div className="struk-total">
-        <div className="total-row">
-          <span>Total</span>
-          <span>Rp {formatRupiah(transaksi.total)}</span>
+      {/* Total */}
+      <div className="struk-totals">
+        <div className="row grand">
+          <span>TOTAL</span><span>{rp(transaksi.total)}</span>
         </div>
-        <div className="total-row">
-          <span>Tunai</span>
-          <span>Rp {formatRupiah(transaksi.bayar)}</span>
-        </div>
-        <div className="total-row">
-          <span>Kembali</span>
-          <span>Rp {formatRupiah(transaksi.kembalian)}</span>
-        </div>
+        <div className="row"><span>TUNAI</span><span>{rp(transaksi.bayar)}</span></div>
+        <div className="row"><span>KEMBALIAN</span><span>{rp(transaksi.kembalian)}</span></div>
       </div>
 
-      <div className="divider">================================</div>
-      
+      <div className="struk-line" />
+
+      {/* Footer */}
       <div className="struk-footer">
-        <p>Terima Kasih</p>
-        <p>Selamat Belanja Kembali</p>
+        <p>Terima kasih telah berbelanja!</p>
+        <p>Barang yang sudah dibeli tidak dapat dikembalikan</p>
       </div>
     </div>
-  )
-})
+  );
+});
 
-export default Struk
+Struk.displayName = 'Struk';
+export default Struk;
